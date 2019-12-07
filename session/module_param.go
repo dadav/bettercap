@@ -96,6 +96,7 @@ const ParamIfaceName = "<interface name>"
 const ParamIfaceAddress = "<interface address>"
 const ParamSubnet = "<entire subnet>"
 const ParamRandomMAC = "<random mac>"
+const ParamLocalUnicastMAC = "<random mac>"
 
 func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	_, v := s.Env.Get(p.Name)
@@ -109,6 +110,11 @@ func (p ModuleParam) Get(s *Session) (error, interface{}) {
 	case ParamRandomMAC:
 		hw := make([]byte, 6)
 		rand.Read(hw)
+		v = net.HardwareAddr(hw).String()
+  case ParamLocalUnicastMAC:
+    hw := make([]byte, 6)
+    rand.Read(hw)
+    hw[0] = (hw[0] | 2) & 0xfe
 		v = net.HardwareAddr(hw).String()
 	}
 

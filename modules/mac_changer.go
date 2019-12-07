@@ -32,7 +32,7 @@ func NewMacChanger(s *session.Session) *MacChanger {
 		"Name of the interface to use."))
 
 	mc.AddParam(session.NewStringParameter("mac.changer.address",
-		session.ParamRandomMAC,
+		session.ParamLocalUnicastMAC,
 		"[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}:[a-fA-F0-9]{2}",
 		"Hardware address to apply to the interface."))
 
@@ -86,15 +86,17 @@ func (mc *MacChanger) setMac(mac net.HardwareAddr) error {
 	var args []string
 
 	os := runtime.GOOS
+  cmd := "ifconfig"
 	if strings.Contains(os, "bsd") || os == "darwin" {
 		args = []string{mc.iface, "ether", mac.String()}
 	} else if os == "linux" || os == "android" {
-		args = []string{mc.iface, "hw", "ether", mac.String()}
+    cmd := "ip"
+		args = []string{"link", "set", mc.iface, "address", mac.String()}
 	} else {
 		return fmt.Errorf("OS %s is not supported by mac.changer module.", os)
 	}
 
-	_, err := core.Exec("ifconfig", args)
+	_, err := core.Exec(cmd, args)
 	if err == nil {
 		mc.Session.Interface.HW = mac
 	}
