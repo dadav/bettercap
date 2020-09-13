@@ -7,7 +7,6 @@ import (
 
 	"github.com/bettercap/bettercap/network"
 	"github.com/bettercap/bettercap/packets"
-	"github.com/bettercap/bettercap/session"
 
 	"github.com/evilsocket/islazy/tui"
 )
@@ -34,9 +33,9 @@ func (mod *WiFiModule) startAp() error {
 	// we need channel hopping and packet injection for this
 	if !mod.Running() {
 		return errNoRecon
-	} else if mod.apRunning {
-		return session.ErrAlreadyStarted(mod.Name())
 	}
+
+	currApConfig := mod.apConfig
 
 	go func() {
 		mod.apRunning = true
@@ -45,20 +44,20 @@ func (mod *WiFiModule) startAp() error {
 		}()
 
 		enc := tui.Yellow("WPA2")
-		if !mod.apConfig.Encryption {
+		if !currApConfig.Encryption {
 			enc = tui.Green("Open")
 		}
 		mod.Info("sending beacons as SSID %s (%s) on channel %d (%s).",
-			tui.Bold(mod.apConfig.SSID),
-			mod.apConfig.BSSID.String(),
-			mod.apConfig.Channel,
+			tui.Bold(currApConfig.SSID),
+			currApConfig.BSSID.String(),
+			currApConfig.Channel,
 			enc)
 
 		for seqn := uint16(0); mod.Running(); seqn++ {
 			mod.writes.Add(1)
 			defer mod.writes.Done()
 
-			if err, pkt := packets.NewDot11Beacon(mod.apConfig, seqn); err != nil {
+			if err, pkt := packets.NewDot11Beacon(currApConfig, seqn); err != nil {
 				mod.Error("could not create beacon packet: %s", err)
 			} else {
 				mod.injectPacket(pkt)
